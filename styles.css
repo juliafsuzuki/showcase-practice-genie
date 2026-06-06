@@ -207,6 +207,9 @@ input, textarea, select { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 18px;
   flex-wrap: wrap;
 }
+.control-row + .control-row {
+  margin-top: 14px;
+}
 .primary-row {
   justify-content: center; gap: 12px;
   margin-bottom: 14px; padding-bottom: 14px;

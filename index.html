@@ -91,18 +91,8 @@
         </div>
 
         <div class="control-group">
-          <span class="control-label">Loop</span>
-          <button class="toggle" id="loopBtn" data-testid="button-loop" aria-pressed="true">On</button>
-        </div>
-
-        <div class="control-group">
           <span class="control-label">Counts</span>
           <button class="toggle" id="countBtn" data-testid="button-counts" aria-pressed="true">On</button>
-        </div>
-
-        <div class="control-group">
-          <span class="control-label">Mirror</span>
-          <button class="toggle" id="mirrorBtn" data-testid="button-mirror" aria-pressed="false">Off</button>
         </div>
 
         <div class="control-group metronome-group">
@@ -112,6 +102,18 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15 9a4 4 0 010 6"/></svg>
             <input type="range" id="metroVol" min="0" max="100" value="35" data-testid="slider-metro-vol" aria-label="Metronome volume" />
           </div>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <span class="control-label">Repeat</span>
+          <button class="toggle" id="loopBtn" data-testid="button-loop" aria-pressed="true" aria-label="Repeat phrase">On</button>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Mirror</span>
+          <button class="toggle" id="mirrorBtn" data-testid="button-mirror" aria-pressed="false">Off</button>
         </div>
       </div>
     </div>
@@ -137,31 +139,13 @@
       </div>
     </div>
 
-    <!-- 4-pass practice loop checklist -->
-    <div class="card practice-card">
-      <div class="card-head">
-        <div class="card-head-left">
-          <span class="card-chip">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          </span>
-          <span class="card-title">4-Pass practice loop</span>
-        </div>
-        <button class="link-btn" id="resetPasses" data-testid="button-reset-passes">Reset</button>
-      </div>
-      <ol class="passes" id="passes">
-        <li><label><input type="checkbox" data-pass="1"><span><b>Pass 1 · Watch only</b> — feel the music, mark the count.</span></label></li>
-        <li><label><input type="checkbox" data-pass="2"><span><b>Pass 2 · Mark through</b> — half-energy walking, no full size.</span></label></li>
-        <li><label><input type="checkbox" data-pass="3"><span><b>Pass 3 · Full out</b> — full frame, full energy.</span></label></li>
-        <li><label><input type="checkbox" data-pass="4"><span><b>Pass 4 · Internalize</b> — eyes closed first half, eyes open second.</span></label></li>
-      </ol>
-    </div>
   </section>
 
   <!-- Phrase list -->
   <aside class="list-pane">
     <div class="list-head">
       <span>Phrases</span>
-      <span class="list-progress" id="listProgress">0 / 14 complete</span>
+      <span class="list-progress" id="listProgress"></span>
     </div>
     <ol class="phrase-list" id="phraseList"></ol>
 

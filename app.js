@@ -20,7 +20,6 @@
   const countOverlay = $('#countOverlay');
   const countNum = $('#countNum'); const countLabel = $('#countLabel');
   const listProgress = $('#listProgress');
-  const passesEl = $('#passes'); const resetPassesBtn = $('#resetPasses');
   const noteBox = $('#noteBox'); const noteSaved = $('#noteSaved'); const clearNoteBtn = $('#clearNote');
   const footerNote = $('#footerNote');
   const brandSubtitle = $('#brandSubtitle');
@@ -45,7 +44,6 @@
     metroVol: 0.35,
     // per-showcase memory
     notes: {},   // notes[showcaseId][phraseIdx] = string
-    passes: {},  // passes[showcaseId][phraseIdx] = [bool,bool,bool,bool]
   };
 
   function currentShowcase() { return SC[state.showcaseId]; }
@@ -56,7 +54,6 @@
   function ensureShowcaseState(id) {
     const sc = SC[id];
     if (!state.notes[id]) state.notes[id] = sc.phrases.map(() => '');
-    if (!state.passes[id]) state.passes[id] = sc.phrases.map(() => [false, false, false, false]);
   }
 
   // ---- Showcase selector ----
@@ -109,7 +106,7 @@
         </span>
         <span class="phrase-check" aria-hidden="true"></span>
       `;
-      btn.addEventListener('click', () => loadPhrase(i, true));
+      btn.addEventListener('click', () => loadPhrase(i, false));
       li.appendChild(btn);
       phraseList.appendChild(li);
     });
@@ -122,8 +119,6 @@
     [...phraseList.children].forEach((li, i) => {
       const btn = li.firstElementChild;
       btn.classList.toggle('active', i === state.idx);
-      const allChecked = state.passes[id][i].every(Boolean);
-      btn.classList.toggle('complete', allChecked);
       const hasNote = state.notes[id][i].trim().length > 0;
       btn.querySelector('.note-dot').hidden = !hasNote;
     });
@@ -131,8 +126,8 @@
   function updateProgress() {
     const id = state.showcaseId;
     const total = SC[id].phrases.length;
-    const done = state.passes[id].filter((arr) => arr.every(Boolean)).length;
-    listProgress.textContent = `${done} / ${total} complete`;
+    const withNotes = state.notes[id].filter((n) => n.trim().length > 0).length;
+    listProgress.textContent = withNotes > 0 ? `${withNotes} / ${total} with notes` : `${total} phrases`;
   }
 
   // ---- Phrase loader ----
@@ -152,11 +147,8 @@
     statLen.textContent = (p.end - p.start).toFixed(1) + 's';
     countLabel.textContent = currentCountsPerBar() === 6 ? '1-2-3' : 'count';
     updateListActive();
-    // Refresh pass checkboxes and notes
+    // Refresh notes
     const id = state.showcaseId;
-    [...passesEl.querySelectorAll('input')].forEach((cb, idx) => {
-      cb.checked = state.passes[id][i][idx];
-    });
     noteBox.value = state.notes[id][i];
     if (autoplay) {
       player.play().then(() => setPlayBtn(true)).catch(() => setPlayBtn(false));
@@ -170,8 +162,14 @@
   // ---- Player controls ----
   function setPlayBtn(playing) { playIcon.innerHTML = playing ? ICON_PAUSE : ICON_PLAY; }
   playBtn.addEventListener('click', () => { if (player.paused) player.play(); else player.pause(); });
-  player.addEventListener('play', () => { setPlayBtn(true); metronome.resync(); });
-  player.addEventListener('pause', () => setPlayBtn(false));
+  player.addEventListener('play', () => {
+    setPlayBtn(true);
+    if (state.metroOn) metronome.start();
+  });
+  player.addEventListener('pause', () => {
+    setPlayBtn(false);
+    metronome.stop();
+  });
   player.addEventListener('ended', () => {
     if (state.loop) { player.currentTime = 0; player.play(); }
     else setPlayBtn(false);
@@ -192,7 +190,12 @@
   bindToggle(loopBtn, 'loop', 'On', 'Off');
   bindToggle(countBtn, 'showCounts', 'On', 'Off', (v) => countOverlay.classList.toggle('hidden', !v));
   bindToggle(mirrorBtn, 'mirror', 'On', 'Off', (v) => player.classList.toggle('mirrored', v));
-  bindToggle(metroBtn, 'metroOn', 'On', 'Off', (v) => { if (v) metronome.start(); else metronome.stop(); });
+  // Metronome toggle just arms/disarms the metronome.
+  // It only clicks while the video is actually playing.
+  bindToggle(metroBtn, 'metroOn', 'On', 'Off', (v) => {
+    if (v && !player.paused) metronome.start();
+    else metronome.stop();
+  });
 
   metroVol.addEventListener('input', (e) => {
     state.metroVol = parseInt(e.target.value, 10) / 100;
@@ -212,42 +215,32 @@
   let lastBeat = -1;
   player.addEventListener('timeupdate', () => {
     if (!state.showCounts) return;
+    const p = currentPhrase();
+    const offset = (p && typeof p.beatOffset === 'number') ? p.beatOffset : 0;
     const beatSec = currentBeatSec();
     const cpb = currentCountsPerBar();
-    const beatPos = player.currentTime / beatSec;
-    const beat = Math.floor(beatPos);
-    const display = (beat % cpb) + 1;
+    // Show '1' until the first true beat is reached, then count along the music.
+    const beatPos = (player.currentTime - offset) / beatSec;
+    const beat = beatPos < 0 ? -1 : Math.floor(beatPos);
+    const display = beat < 0 ? 1 : ((beat % cpb) + 1);
     if (beat !== lastBeat) {
       lastBeat = beat;
       countNum.textContent = display;
-      countOverlay.classList.add('beat');
-      setTimeout(() => countOverlay.classList.remove('beat'), 110);
+      if (beat >= 0) {
+        countOverlay.classList.add('beat');
+        setTimeout(() => countOverlay.classList.remove('beat'), 110);
+      }
     }
   });
   player.addEventListener('seeked', () => { lastBeat = -1; });
   player.addEventListener('loadeddata', () => { lastBeat = -1; countNum.textContent = '1'; });
-
-  // ---- Passes ----
-  passesEl.addEventListener('change', (e) => {
-    const cb = e.target;
-    if (cb.tagName !== 'INPUT') return;
-    const passIdx = parseInt(cb.dataset.pass, 10) - 1;
-    state.passes[state.showcaseId][state.idx][passIdx] = cb.checked;
-    updateListActive();
-    updateProgress();
-  });
-  resetPassesBtn.addEventListener('click', () => {
-    state.passes[state.showcaseId][state.idx] = [false, false, false, false];
-    [...passesEl.querySelectorAll('input')].forEach((cb) => (cb.checked = false));
-    updateListActive();
-    updateProgress();
-  });
 
   // ---- Notes ----
   let savedTimer;
   noteBox.addEventListener('input', () => {
     state.notes[state.showcaseId][state.idx] = noteBox.value;
     updateListActive();
+    updateProgress();
     noteSaved.textContent = 'Saved';
     noteSaved.classList.add('show');
     clearTimeout(savedTimer);
@@ -257,6 +250,7 @@
     state.notes[state.showcaseId][state.idx] = '';
     noteBox.value = '';
     updateListActive();
+    updateProgress();
   });
 
   // ---- Full run modal ----
@@ -343,13 +337,28 @@
     }
     function resync() {
       if (!ctx || !state.metroOn) return;
-      // Align next click with the current playback position rounded UP to next beat.
+      // Align with the actual music beat phase. Each phrase carries `beatOffset`:
+      // seconds from the clip's start to the next true musical beat.
+      const p = currentPhrase();
+      const beatOffset = (p && typeof p.beatOffset === 'number') ? p.beatOffset : 0;
       const beatSec = currentBeatSec() / state.speed;
-      const pos = player.currentTime / (currentBeatSec()); // beats elapsed (in real time)
-      const wholeBeats = Math.floor(pos);
-      const beatsUntilNext = (wholeBeats + 1) - pos;
+      const baseBeat = currentBeatSec(); // music's beat in real (1x) time
+      // Position inside the clip, expressed in true musical beats from the first beat.
+      const beatsFromFirst = (player.currentTime - beatOffset) / baseBeat;
+      let beatsUntilNext;
+      let upcomingBeatIdx;
+      if (beatsFromFirst < 0) {
+        // Playhead is before the first true beat in the clip.
+        beatsUntilNext = -beatsFromFirst;
+        upcomingBeatIdx = 0;
+      } else {
+        const whole = Math.floor(beatsFromFirst);
+        beatsUntilNext = (whole + 1) - beatsFromFirst;
+        upcomingBeatIdx = whole + 1;
+      }
+      // Convert wait in true beats to playback-time seconds.
       nextNoteTime = ctx.currentTime + beatsUntilNext * beatSec;
-      currentBeat = wholeBeats + 1; // the upcoming beat's index, 0-based
+      currentBeat = upcomingBeatIdx; // 0 means the first beat after clip start
     }
     return { start, stop, setVolume, resync };
   })();
