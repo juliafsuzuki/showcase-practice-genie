@@ -1,4 +1,4 @@
-# Personalized Dance Practice Assistance for Showcase Genie
+# Personal Assistance - Showcase Genie
 
 I vibe coded an app that I can use to practice my Showcase Genie. Showcase Genie comprises of two showcase choreographies (Smooth choreography with music, A Whole New World, Rhythm choreography with music, Friend Like Me).
 There is a process for learning a new choreography effectively. One component is to break the entire choreography into musical phrases (digestable segments) so I can focus on one phrase at a time and stich more than one phrases together. Over time, I will have learned the entire choreography. This app helped me break the entire choreography into musical phrases and added helpful features such as Speed, Counts, Metrome, Repeat, and Mirror. 
@@ -63,11 +63,9 @@ The repo includes `vercel.json` configuring static hosting.
 
 ## Access
 
-👉 showcase-genie.vercel.app
-
-https://showcase-genie.vercel.app/
-
 <img width="916" height="722" alt="image" src="https://github.com/user-attachments/assets/7327b22a-0872-46f0-8bf2-5765faf2f4b8" />
+
+👉 https://showcase-genie.vercel.app/
 
 ## Adding a New Showcase
 
